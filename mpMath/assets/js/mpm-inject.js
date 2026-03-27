@@ -24,7 +24,17 @@ var readyStateCheckInterval = setInterval(function() {
                         editing.innerHTML = event.data.text.substring(beg, end);
                         editingMode = false; // 还原为非编辑模式
                     } else {
-                        window.UE.getEditor('js_editor').execCommand('insertHTML', '\xA0' + event.data.text + '\xA0');
+                        // WeChat updated their editor API (2024+)
+                        if (window.__MP_Editor_JSAPI__ && window.__MP_Editor_JSAPI__.invoke) {
+                            window.__MP_Editor_JSAPI__.invoke({
+                                apiName: 'mp_editor_insert_html',
+                                apiParam: { html: '\xA0' + event.data.text + '\xA0', isSelect: false }
+                            });
+                        } else {
+                            // Fallback for older WeChat versions
+                            console.warn('[mpMath] Using legacy insert API');
+                            window.UE.getEditor('js_editor').execCommand('insertHTML', '\xA0' + event.data.text + '\xA0');
+                        }
                     }
                 }
             }

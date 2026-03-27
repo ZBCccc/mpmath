@@ -21,18 +21,19 @@
 
 #### 方式
 
-- Github：[mpMath](https://github.com/ciaochaos/mpMath)
-- 直接下载：[mpMath v0.2.1](https://github.com/ciaochaos/mpMath/releases/download/v0.2.1/mpMath.crx)
+- Github：[mpMath](https://github.com/latentcat/mpMath)
+- 直接下载：[mpMath v0.2.1 (zip)](https://github.com/latentcat/mpMath/releases/download/v0.2.1/mpmath-0.2.1.zip)
 - Chrome 应用商店：[mpMath](https://chrome.google.com/webstore/detail/mpmath/nodhgmlcnikgcdfnllmiodlimcdglchh)
 
 #### 安装步骤：
 
-1. 下载 CRX 文件
+1. 下载并解压 mpMath 文件夹
 2. 在 Chrome 中点击右上角 ︙ -> 更多工具 ->  扩展程序  
    或打开 [chrome://extensions/](chrome://extensions/) 
 3. 打开右上角开发者模式
-4. 将 CRX 文件拖入 Chrome 窗口
-5. 单击「添加扩展程序」，安装完成
+4. 点击「加载已解压的扩展程序」
+5. 选择解压后的 `mpMath` 文件夹
+6. 安装完成
 
 ### 使用
 

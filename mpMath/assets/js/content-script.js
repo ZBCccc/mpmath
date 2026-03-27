@@ -135,17 +135,29 @@ function revise() {
     embeds.forEach((embed, index) => {
         console.log(`【MP_SVG_REVISE】 第 ${index} 个……`);
         let parent_node = embed.parentNode;
+        if (parent_node.querySelector('svg')) {
+            embed.remove();
+            return;
+        }
         promises.push(new Promise(resolve => {
             loadSVG(embed.src).then(svg => {
-                parent_node.insertBefore(svg, embed);
-                parent_node.removeChild(embed);
+                if (svg) {
+                    parent_node.insertBefore(svg, embed);
+                    embed.remove();
+                } else {
+                    console.warn('[MP_SVG_REVISE] Failed to load SVG from embed');
+                    embed.remove();
+                }
+                resolve();
+            }).catch(err => {
+                console.error('[MP_SVG_REVISE] SVG load error:', err);
+                embed.remove();
                 resolve();
             })
         }))
     });
     Promise.all(promises).then(() => {
         console.log('Revise complete！');
-        //alert('Revise complete！');
         alert(`修复了 ${embeds.length} 个目标!`);
     })
 }

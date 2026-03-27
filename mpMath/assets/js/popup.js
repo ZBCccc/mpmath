@@ -1,7 +1,10 @@
 // 修改MathJax全局配置，使微信编辑器能保存下来
 MathJax = {
     svg: { fontCache: 'none' },
-    tex: { tags: 'ams' }
+    tex: { tags: 'ams' },
+    startup: {
+        promise: undefined
+    }
 };
 
 let input = document.getElementById('input');
@@ -26,6 +29,12 @@ function convert() {
 
     output = document.getElementById('output');
     output.innerHTML = '';
+
+    if (!window.MathJax || !window.MathJax.tex2svgPromise) {
+        output.appendChild(document.createElement('pre'))
+              .appendChild(document.createTextNode('MathJax loading...'));
+        return;
+    }
 
     MathJax.texReset();
     let options = MathJax.getMetricsFor(output);
@@ -55,7 +64,6 @@ function insertFormula() {
     if ($(block).prop('checked')) {
         output.childNodes[0].style = 'overflow-x:auto; outline:0; display:block; text-align: center; margin: 15px 0px;'
         output.childNodes[0].setAttribute('display', true);
-        output.childNodes[0].childNodes[0].style = 'height:auto; max-width:300% !important;'
     }
 
     //output.childNodes[0].setAttribute('data-formula', input.value.trim().replace(/\\/g, '\\\\'));

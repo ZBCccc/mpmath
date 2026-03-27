@@ -14,3 +14,17 @@
     overflow: auto;
     background-color: rgba(0, 0, 0, 0.4);
 }
+
+#ueditor_0 .view mjx-container,
+#ueditor_0 .view mjx-container svg,
+#ueditor_0 .view span[data-formula] mjx-container,
+#ueditor_0 .view span[data-formula] mjx-container svg {
+    max-width: 100% !important;
+    height: auto !important;
+    font-size: inherit !important;
+}
+
+/* Allow editor to control formula sizing */
+#ueditor_0 .view .MathJax {
+    font-size: inherit;
+}
