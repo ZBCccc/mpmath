@@ -1,13 +1,29 @@
-# mpMath — 微信公众号公式编辑插件
+# mpMath — 微信公众号公式编辑插件（修复版）
 
-以下文档或有延时。查看最新文档：[troyni.com/mpmath](https://troyni.com/mpmath)。
+> [!NOTE]
+> 本项目是 [latentcat/mpmath](https://github.com/latentcat/mpmath) 的修复分支。
+> 原项目于 2024 年中停止维护，本 fork 修复了以下关键问题使其可在当前微信编辑器中正常使用。
 
-想要在微信公众号的编辑器里输入公式吗？来试试我们的 Chrome 插件吧～
+## 与原版的区别
 
-相信不少人有在微信公众号上输入数学公式的需求，而微信至今没有推出官方的公式编辑器。有人被迫去选择一些新的工作流程，比如我在文章《[一道从初中做到大学的数学题](https://mp.weixin.qq.com/s/uCdL9gJUbIs0X5WCXiskgA)》中采用了 TeX -> PDF -> SVG 的制作流程，这对普通用户来说都有一定的门槛。有人妥协，选择用截图来插入公式，或是干脆用文字字符来拼凑公式，而等等这些都有一定的问题。在这样的情况下，我们选择自己写一个插件来满足公众号输入公式的需求。
+原版（latentcat/mpmath v0.2.1）存在的问题：
 
-完全开源。  
-能力有限，许多问题尚未解决，许多功能尚未实现。如果大家能提供帮助的话，我们将感激不尽！
+| 问题 | 原因 | 状态 |
+|------|------|------|
+| 无法插入新公式 | 微信编辑器 API 变更（`UE.getEditor` 失效） | ✅ 已修复 |
+| manifest.json 语法错误 | `background.service_worker` 字段名错误 | ✅ 已修复 |
+| MathJax 初始化报错 | 异步加载时序问题 | ✅ 已修复 |
+| 草稿保存后公式显示异常 | SVG embed 转换逻辑需适配新 DOM | ✅ 已修复 |
+| CRX 无法安装 | Chrome 不再支持 CRX 安装 | ✅ 文档已更新 |
+| 公式字体大小无法调整 | 编辑器 DOM 结构变化 | ⚠️ CSS 规则已添加 |
+
+---
+
+想要在微信公众号的编辑器里输入公式吗？来试试这个 Chrome 插件吧～
+
+相信不少人有在微信公众号上输入数学公式的需求，而微信至今没有推出官方的公式编辑器。有人被迫去选择一些新的工作流程，比如 TeX → PDF → SVG 的制作流程，这对普通用户来说都有一定的门槛。有人妥协，选择用截图来插入公式，或是干脆用文字字符来拼凑公式，而这些都是问题。在这样的情况下，我们选择写一个插件来满足公众号输入公式的需求。
+
+完全开源。
 
 ### 特性
 
@@ -19,27 +35,25 @@
 
 ### 下载与安装
 
-#### 方式
+#### 下载
 
-- Github：[mpMath](https://github.com/latentcat/mpMath)
-- 直接下载：[mpMath v0.2.1 (zip)](https://github.com/latentcat/mpMath/releases/download/v0.2.1/mpmath-0.2.1.zip)
-- Chrome 应用商店：[mpMath](https://chrome.google.com/webstore/detail/mpmath/nodhgmlcnikgcdfnllmiodlimcdglchh)
+- Github（推荐）：[ZBCccc/mpmath](https://github.com/ZBCccc/mpmath/releases)
+- Chrome 应用商店：原版 [mpMath](https://chrome.google.com/webstore/detail/mpmath/nodhgmlcnikgcdfnllmiodlimcdglchh)（可能已过时）
 
-#### 安装步骤：
+#### 安装步骤
 
-1. 下载并解压 mpMath 文件夹
-2. 在 Chrome 中点击右上角 ︙ -> 更多工具 ->  扩展程序  
-   或打开 [chrome://extensions/](chrome://extensions/) 
-3. 打开右上角开发者模式
-4. 点击「加载已解压的扩展程序」
-5. 选择解压后的 `mpMath` 文件夹
-6. 安装完成
+1. 下载最新版本的 ZIP 文件（见 [Releases](https://github.com/ZBCccc/mpmath/releases)）
+2. 解压下载的 ZIP 文件
+3. 在 Chrome 中点击右上角 ︙ -> 更多工具 -> 扩展程序  
+   或打开 [chrome://extensions/](chrome://extensions/)
+4. 打开右上角**开发者模式**
+5. 点击「加载已解压的扩展程序」
+6. 选择解压后的 `mpMath` 文件夹
+7. 安装完成
 
 ### 使用
 
 打开微信公众平台图文编辑界面，若 `公式` 已经出现在页面顶部 `音频` 的右侧，则说明插件成功运行。
-
-![](https://troyni.com/assets/building-mpmath/1fa9214e84c1455ee3278fb11b1e391a_MD5.jpg)
 
 点击 `公式` 即可新建公式并插入。点击已经插入的公式即可二次编辑。
 
@@ -53,11 +67,11 @@
 
 #### 快捷键
 
-| 操作         | 快捷键                                                       |
-| ------------ | ------------------------------------------------------------ |
+| 操作         | 快捷键 |
+| ------------ | ------ |
 | 新建公式     | <kbd>control</kbd> + <kbd>/</kbd><br /><kbd>command</kbd> + <kbd>/</kbd> |
-| 退出公式编辑 | <kbd>esc</kbd>                                               |
-| 插入公式     | <kbd>shift</kbd> + <kbd>enter</kbd>                          |
+| 退出公式编辑 | <kbd>esc</kbd> |
+| 插入公式     | <kbd>shift</kbd> + <kbd>enter</kbd> |
 
 #### 可能遇到的问题
 
@@ -68,24 +82,22 @@
 - 公式不能被高亮选中、拖动
   - 可同时选中公式左右侧的字符进行复制等操作
 
-### 反馈
-
-- 本页评论区
-- 邮箱：1272777550@qq.com
-- 微信：nhciao
-- 微信公众号：Isle of Chaos
-
 ### 开发计划
 
-- 公式输入提示
-- 如 Typora 等的无模态弹窗公式输入
-- 一键转换 LaTeX 公式
+- [ ] 公式输入提示
+- [ ] 如 Typora 等的无模态弹窗公式输入
+- [ ] 一键转换 LaTeX 公式
+
+### 反馈
+
+- [GitHub Issues](https://github.com/ZBCccc/mpmath/issues)
+- 原作者联系方式见 [上游项目](https://github.com/latentcat/mpmath)
 
 ### 许可
 
-[The MIT License](https://opensource.org/licenses/MIT)
+[MIT License](https://opensource.org/licenses/MIT)（继承自上游）
 
-### 作者
+### 维护者
 
-- ciaochaos - CUC
-- CPunisher - BUAA
+- ZBCccc
+- 原作者：[ciaochaos](https://github.com/ciaochaos) / [latentcat](https://github.com/latentcat)
