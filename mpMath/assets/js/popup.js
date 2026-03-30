@@ -1,13 +1,5 @@
-MathJax = {
-    svg: { fontCache: 'none' },
-    tex: { tags: 'ams' }
-};
+let input, block, insert, output;
 
-let input = document.getElementById('input');
-let block = document.getElementById('block');
-let insert = document.getElementById('insert');
-
-// 判断输入是否为空
 function checkNull(str) {
     if (str.length == 0) {
         insert.disabled = true;
@@ -19,33 +11,45 @@ function checkNull(str) {
 }
 
 function convert() {
-    let inputTex = document.getElementById("input").value.trim();
+    let inputTex = input.value.trim();
     checkNull(inputTex);
-
-    output = document.getElementById('output');
     output.innerHTML = '';
 
-    if (!window.MathJax || !window.MathJax.tex2svgPromise) {
+    if (!window.MathJax || !MathJax.Hub) {
         output.appendChild(document.createElement('pre'))
               .appendChild(document.createTextNode('MathJax loading...'));
         return;
     }
 
-    MathJax.startup.promise.then(function() {
-        MathJax.texReset();
-        let options = MathJax.getMetricsFor(output);
-        options.display = block.checked;
-        MathJax.tex2svgPromise(inputTex, options).then(function(node) {
-            output.appendChild(node);
-            MathJax.startup.document.clear();
-            MathJax.startup.document.updateDocument();
-        }).catch(function(err) {
-            output.appendChild(document.createElement('pre')).appendChild(document.createTextNode(err.message));
+    MathJax.Hub.Queue(function () {
+        let container = document.createElement('div');
+        container.style.visibility = 'hidden';
+        container.style.position = 'absolute';
+        container.style.top = '-9999px';
+        document.body.appendChild(container);
+
+        let script = document.createElement('script');
+        script.type = block.checked ? 'math/tex; mode=display' : 'math/tex';
+        script.text = inputTex;
+        container.appendChild(script);
+
+        MathJax.Hub.Typeset(container, function () {
+            let svg = container.querySelector('svg');
+            if (svg) {
+                let svgClone = svg.cloneNode(true);
+                if (block.checked) {
+                    svgClone.style.cssText = 'overflow-x:auto; outline:0; display:block; text-align:center; margin:15px 0px';
+                }
+                output.appendChild(svgClone);
+            } else {
+                output.appendChild(document.createElement('pre'))
+                      .appendChild(document.createTextNode('Render failed'));
+            }
+            document.body.removeChild(container);
         });
     });
 }
 
-// 请求关闭公式编辑页面
 function closeFrame() {
     parent.window.postMessage({ type: 'CLOSE_FORMULA' }, '*');
 }
@@ -53,19 +57,14 @@ function closeFrame() {
 function insertFormula() {
     if (insert.disabled == true) return;
 
-    // 将生成的mjx-container套在span中
-    let output = document.getElementById('output');
-    let sp = document.createElement('span');
-    if ($(block).prop('checked')) {
-        output.childNodes[0].style = 'overflow-x:auto; outline:0; display:block; text-align: center; margin: 15px 0px;'
-        output.childNodes[0].setAttribute('display', true);
-    }
+    let first = output.querySelector('svg');
+    if (!first) return;
 
-    //output.childNodes[0].setAttribute('data-formula', input.value.trim().replace(/\\/g, '\\\\'));
-    output.childNodes[0].setAttribute('data-formula', input.value.trim());
-    sp.setAttribute('style', 'cursor:pointer;');
-    sp.appendChild(output.childNodes[0]);
-    sp.innerHTML = sp.innerHTML.replace(/<mjx-assistive-mml.+?<\/mjx-assistive-mml>/g, "");
+    let sp = document.createElement('span');
+    sp.setAttribute('data-formula', input.value.trim());
+    sp.style.cssText = 'cursor:pointer;';
+    sp.appendChild(first.cloneNode(true));
+    sp.innerHTML = sp.innerHTML.replace(/<mjx-assistive-mml.+?<\/mjx-assistive-mml>/g, '');
 
     parent.window.postMessage({ type: 'INSERT_FORMULA', text: sp.outerHTML }, '*');
     input.value = '';
@@ -73,6 +72,11 @@ function insertFormula() {
 }
 
 $(function() {
+    input = document.getElementById('input');
+    block = document.getElementById('block');
+    insert = document.getElementById('insert');
+    output = document.getElementById('output');
+
     input.oninput = convert;
     block.onchange = convert;
     insert.onclick = insertFormula;
@@ -80,37 +84,28 @@ $(function() {
     document.getElementById('cancel').onclick = closeFrame;
 
     window.addEventListener('message', function(event) {
-        // 接收来自主页面的消息，改变输入框内容
-        if (event.data.type) {
+        if (event.data && event.data.type) {
             if (event.data.type == 'CHANGE_INPUT') {
-                //input.value = event.data.text.replace(/\\\\/g, '\\');
                 input.value = event.data.text;
                 input.focus();
-
-                // 行间公式自动勾选
-                if (event.data.isBlock == "true") $(block).prop('checked', true);
-                else $(block).prop('checked', false);
+                if (event.data.isBlock == 'true') block.checked = true;
+                else block.checked = false;
                 convert();
             }
         }
     });
 
-    // 防止窗口失去焦点
     $(window).focusout(function() {
-        setTimeout(function() {
-            $('#input').focus();
-        }, 10);
+        setTimeout(function() { input.focus(); }, 10);
     });
 
-    $('#input').keydown(function(event) {
-        // 处理shift+enter
+    input.keydown(function(event) {
         if (event.keyCode == 13 && event.shiftKey) {
             insertFormula();
         }
     });
 
     $(document).keydown(function(event) {
-        // 处理esc
         if (event.keyCode == 27) {
             closeFrame();
         }

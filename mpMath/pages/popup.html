@@ -6,10 +6,14 @@
     <link rel="stylesheet" href="../assets/css/popup.css" />
     <script src="../assets/js/jquery-3.4.1.min.js"></script>
     <script src="../assets/js/polyfill.min.js"></script>
-    <script
-      id="MathJax-script"
-      src="../assets/js/tex-svg-full.js"
-    ></script>
+    <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        jax: ["input/TeX", "output/SVG"],
+        tex: { tags: "ams" },
+        svg: { fontCache: "none" }
+    });
+    </script>
+    <script src="../assets/js/tex-svg-full.js"></script>
   </head>
 
   <body>
