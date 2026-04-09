@@ -41,6 +41,7 @@
                 "assets/css/weui.css",
                 "assets/css/popup.css",
                 "assets/js/jquery-3.4.1.min.js",
+                "assets/js/mathjax-config.js",
                 "assets/js/mpm-inject.js",
                 "assets/js/polyfill.min.js",
                 "assets/js/tex-svg-full.js",
@@ -50,5 +51,6 @@
             "matches": ["*://mp.weixin.qq.com/*"]
         }
     ],
+    "homepage_url": "https://github.com/ZBCccc/mpmath",
     "manifest_version": 3
 }

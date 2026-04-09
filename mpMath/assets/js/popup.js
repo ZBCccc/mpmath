@@ -1,53 +1,96 @@
-let input, block, insert, output;
+let input;
+let block;
+let insert;
+let output;
+let renderToken = 0;
+let convertTimer = null;
 
-function checkNull(str) {
-    if (str.length == 0) {
-        insert.disabled = true;
-        $(insert).addClass('weui-desktop-btn_disabled');
-    } else {
-        insert.disabled = false;
-        $(insert).removeClass('weui-desktop-btn_disabled');
-    }
+function setInsertEnabled(enabled) {
+    insert.disabled = !enabled;
+    $(insert).toggleClass('weui-desktop-btn_disabled', !enabled);
 }
 
-function convert() {
-    let inputTex = input.value.trim();
-    checkNull(inputTex);
+function showMessage(message) {
     output.innerHTML = '';
+    output.appendChild(document.createElement('pre'))
+          .appendChild(document.createTextNode(message));
+}
 
-    if (!window.MathJax || !MathJax.Hub) {
-        output.appendChild(document.createElement('pre'))
-              .appendChild(document.createTextNode('MathJax loading...'));
+function buildFormulaWrapper(svg, isBlock, tex) {
+    const wrapper = document.createElement('span');
+    const formulaId = (window.crypto && typeof window.crypto.randomUUID === 'function')
+        ? window.crypto.randomUUID()
+        : 'mpm-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8);
+
+    wrapper.className = 'mpm-formula';
+    wrapper.setAttribute('data-formula', tex !== undefined ? tex : input.value.trim());
+    wrapper.setAttribute('data-formula-id', formulaId);
+    wrapper.setAttribute('data-formula-display', isBlock ? 'block' : 'inline');
+    wrapper.style.cssText = isBlock
+        ? 'display:block; text-align:center; margin:15px 0; cursor:pointer;'
+        : 'display:inline-block; vertical-align:middle; line-height:0; cursor:pointer;';
+
+    const svgClone = svg.cloneNode(true);
+    svgClone.style.cssText = isBlock
+        ? 'display:block; margin:0 auto; max-width:100%; height:auto;'
+        : 'display:inline-block; vertical-align:middle; max-width:100%; height:auto;';
+
+    wrapper.appendChild(svgClone);
+    return wrapper;
+}
+
+async function convert() {
+    const tex = input.value.trim();
+    const currentToken = ++renderToken;
+
+    output.innerHTML = '';
+    if (!tex) {
+        setInsertEnabled(false);
         return;
     }
 
-    MathJax.Hub.Queue(function () {
-        let container = document.createElement('div');
-        container.style.visibility = 'hidden';
-        container.style.position = 'absolute';
-        container.style.top = '-9999px';
-        document.body.appendChild(container);
+    setInsertEnabled(false);
 
-        let script = document.createElement('script');
-        script.type = block.checked ? 'math/tex; mode=display' : 'math/tex';
-        script.text = inputTex;
-        container.appendChild(script);
+    if (!window.MathJax || !window.MathJax.startup || !window.MathJax.tex2svgPromise) {
+        showMessage('MathJax loading...');
+        return;
+    }
 
-        MathJax.Hub.Typeset(container, function () {
-            let svg = container.querySelector('svg');
-            if (svg) {
-                let svgClone = svg.cloneNode(true);
-                if (block.checked) {
-                    svgClone.style.cssText = 'overflow-x:auto; outline:0; display:block; text-align:center; margin:15px 0px';
-                }
-                output.appendChild(svgClone);
-            } else {
-                output.appendChild(document.createElement('pre'))
-                      .appendChild(document.createTextNode('Render failed'));
-            }
-            document.body.removeChild(container);
-        });
-    });
+    try {
+        await window.MathJax.startup.promise;
+        if (currentToken !== renderToken) {
+            return;
+        }
+
+        window.MathJax.texReset();
+        const options = window.MathJax.getMetricsFor(output);
+        options.display = block.checked;
+
+        const node = await window.MathJax.tex2svgPromise(tex, options);
+        if (currentToken !== renderToken) {
+            return;
+        }
+
+        const svg = node.querySelector('svg');
+        if (!svg) {
+            showMessage('Render failed');
+            return;
+        }
+
+        if (node.querySelector('[data-mml-node="merror"]')) {
+            showMessage('LaTeX 语法错误，请检查输入');
+            return;
+        }
+
+        output.innerHTML = '';
+        output.appendChild(buildFormulaWrapper(svg, block.checked, input.value.trim()));
+        setInsertEnabled(true);
+    } catch (error) {
+        if (currentToken !== renderToken) {
+            return;
+        }
+        showMessage(error && error.message ? error.message : 'Render failed');
+    }
 }
 
 function closeFrame() {
@@ -55,58 +98,108 @@ function closeFrame() {
 }
 
 function insertFormula() {
-    if (insert.disabled == true) return;
+    if (insert.disabled) {
+        return;
+    }
 
-    let first = output.querySelector('svg');
-    if (!first) return;
+    const formula = output.querySelector('[data-formula]');
+    if (!formula) {
+        return;
+    }
 
-    let sp = document.createElement('span');
-    sp.setAttribute('data-formula', input.value.trim());
-    sp.style.cssText = 'cursor:pointer;';
-    sp.appendChild(first.cloneNode(true));
-    sp.innerHTML = sp.innerHTML.replace(/<mjx-assistive-mml.+?<\/mjx-assistive-mml>/g, '');
-
-    parent.window.postMessage({ type: 'INSERT_FORMULA', text: sp.outerHTML }, '*');
-    input.value = '';
-    closeFrame();
+    parent.window.postMessage({ type: 'INSERT_FORMULA', text: formula.outerHTML }, '*');
 }
 
-$(function() {
+$(function () {
     input = document.getElementById('input');
     block = document.getElementById('block');
     insert = document.getElementById('insert');
     output = document.getElementById('output');
 
-    input.oninput = convert;
-    block.onchange = convert;
-    insert.onclick = insertFormula;
-    document.getElementById('close').onclick = closeFrame;
-    document.getElementById('cancel').onclick = closeFrame;
+    setInsertEnabled(false);
 
-    window.addEventListener('message', function(event) {
-        if (event.data && event.data.type) {
-            if (event.data.type == 'CHANGE_INPUT') {
-                input.value = event.data.text;
-                input.focus();
-                if (event.data.isBlock == 'true') block.checked = true;
-                else block.checked = false;
-                convert();
+    function debouncedConvert() {
+        clearTimeout(convertTimer);
+        convertTimer = setTimeout(convert, 300);
+    }
+
+    input.addEventListener('input', debouncedConvert);
+    block.addEventListener('change', convert);
+    insert.addEventListener('click', insertFormula);
+    document.getElementById('close').addEventListener('click', closeFrame);
+    document.getElementById('cancel').addEventListener('click', closeFrame);
+
+    window.addEventListener('message', function (event) {
+        if (!event.data || event.data.type !== 'CHANGE_INPUT') {
+            return;
+        }
+
+        input.value = event.data.text || '';
+        block.checked = event.data.isBlock === 'true';
+        input.focus();
+        convert();
+    });
+
+    window.addEventListener('message', async function (event) {
+        if (!event.data || event.data.type !== 'BATCH_RENDER') {
+            return;
+        }
+
+        const { requestId, formulas } = event.data;
+        const results = [];
+
+        try {
+            if (!window.MathJax || !window.MathJax.startup || !window.MathJax.tex2svgPromise) {
+                throw new Error('MathJax not ready');
+            }
+            await window.MathJax.startup.promise;
+
+            for (const formula of formulas) {
+                try {
+                    window.MathJax.texReset();
+                    const options = window.MathJax.getMetricsFor(document.body);
+                    options.display = formula.isBlock;
+                    const node = await window.MathJax.tex2svgPromise(formula.tex, options);
+                    const svg = node.querySelector('svg');
+
+                    if (!svg || node.querySelector('[data-mml-node="merror"]')) {
+                        results.push({ id: formula.id, error: true });
+                    } else {
+                        const wrapper = buildFormulaWrapper(svg, formula.isBlock, formula.tex);
+                        results.push({ id: formula.id, html: wrapper.outerHTML, error: false });
+                    }
+                } catch (e) {
+                    results.push({ id: formula.id, error: true });
+                }
+            }
+        } catch (e) {
+            for (const formula of formulas) {
+                results.push({ id: formula.id, error: true });
             }
         }
+
+        parent.window.postMessage({ type: 'BATCH_RENDER_DONE', requestId: requestId, results: results }, '*');
     });
 
-    $(window).focusout(function() {
-        setTimeout(function() { input.focus(); }, 10);
+    window.addEventListener('focusout', function (event) {
+        if (event.relatedTarget) {
+            return;
+        }
+        setTimeout(function () {
+            input.focus();
+        }, 10);
     });
 
-    input.keydown(function(event) {
-        if (event.keyCode == 13 && event.shiftKey) {
+    $(input).on('keydown', function (event) {
+        if (event.key === 'Enter' && event.shiftKey) {
+            event.preventDefault();
             insertFormula();
         }
     });
 
-    $(document).keydown(function(event) {
-        if (event.keyCode == 27) {
+    $(document).on('keydown', function (event) {
+        if (event.key === 'Escape') {
+            event.preventDefault();
             closeFrame();
         }
     });

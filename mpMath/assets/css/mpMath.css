@@ -15,16 +15,40 @@
     background-color: rgba(0, 0, 0, 0.4);
 }
 
-#ueditor_0 .view mjx-container,
-#ueditor_0 .view mjx-container svg,
-#ueditor_0 .view span[data-formula] mjx-container,
-#ueditor_0 .view span[data-formula] mjx-container svg {
-    max-width: 100% !important;
-    height: auto !important;
-    font-size: inherit !important;
+.mpm-toolbar-button {
+    margin-left: 8px;
+    padding: 0 12px;
+    min-width: 60px;
+    height: 28px;
+    border: 1px solid #d9d9d9;
+    border-radius: 4px;
+    background: #fff;
+    color: #222;
+    cursor: pointer;
 }
 
-/* Allow editor to control formula sizing */
-#ueditor_0 .view .MathJax {
-    font-size: inherit;
+.mpm-toolbar-button:hover {
+    border-color: #07c160;
+    color: #07c160;
+}
+
+span[data-formula] {
+    cursor: pointer;
+}
+
+span[data-formula] svg {
+    max-width: 100% !important;
+    height: auto !important;
+    vertical-align: middle;
+}
+
+span[data-formula][data-formula-display="block"] {
+    display: block;
+    margin: 15px 0;
+    text-align: center;
+}
+
+span[data-formula][data-formula-display="block"] svg {
+    display: block;
+    margin: 0 auto;
 }
