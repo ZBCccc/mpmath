@@ -101,6 +101,12 @@ function buildHtmlFromSegments(segments, results) {
 }
 
 async function handleMarkdownPaste(event) {
+    // 剪贴板含有富文本 HTML（来自 mdnice、Word 等工具）时直接放行，不拦截
+    const clipHtml = event.clipboardData && event.clipboardData.getData('text/html');
+    if (clipHtml && clipHtml.trim()) {
+        return;
+    }
+
     const text = event.clipboardData && event.clipboardData.getData('text/plain');
     if (!text || !hasFormulaMarkers(text) || operationInProgress) {
         return;
